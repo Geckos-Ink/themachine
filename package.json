@@ -1,0 +1,27 @@
+{
+  "name": "themachine",
+  "version": "0.0.1",
+  "description": "Linux machine builder",
+  "main": "run.js",
+  "scripts": {
+    "test": "run.js --test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Geckos-Ink/themachine.git"
+  },
+  "keywords": [
+    "linux",
+    "ssh",
+    "machine",
+    "builder",
+    "build",
+    "maintain"
+  ],
+  "author": "Gecko's Ink <geckos.ink>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Geckos-Ink/themachine/issues"
+  },
+  "homepage": "https://github.com/Geckos-Ink/themachine#readme"
+}
