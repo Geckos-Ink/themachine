@@ -23,5 +23,8 @@
   "bugs": {
     "url": "https://github.com/Geckos-Ink/themachine/issues"
   },
-  "homepage": "https://github.com/Geckos-Ink/themachine#readme"
+  "homepage": "https://github.com/Geckos-Ink/themachine#readme",
+  "dependencies": {
+    "node-ssh": "^12.0.4"
+  }
 }
