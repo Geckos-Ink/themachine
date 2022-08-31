@@ -4,7 +4,7 @@
   "description": "Linux machine builder",
   "main": "run.js",
   "scripts": {
-    "test": "run.js --test"
+    "test": "node index"
   },
   "repository": {
     "type": "git",
