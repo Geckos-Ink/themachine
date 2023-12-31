@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "Linux machine builder",
   "main": "./src/index.js",
+  "type": "module",
   "scripts": {
     "test": "node index"
   },
@@ -25,6 +26,5 @@
   },
   "homepage": "https://github.com/Geckos-Ink/themachine#readme",
   "dependencies": {
-    "node-ssh": "^12.0.4"
   }
 }

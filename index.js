@@ -1,6 +1,3 @@
-const theMachine = require('./src/');
+import { TheMachine } from "./src";
 
-const utils = require('./src/utils');
-const conf = utils.readConf();
-
-theMachine(conf);
+//...
