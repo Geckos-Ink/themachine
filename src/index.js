@@ -39,16 +39,16 @@ class MachineSynth extends UniSynth {
 
         cmd.addSeries(cmdStart, '\n')
 
-        cmd.$begin = (seq) => {
-            cmd.stack.push('bash')
+        cmd.$begin = (stack, seq) => {
+            stack.push('bash')
         }
 
-        cmd.callback = (seq) => {
-            cmd.stack.push(seq.str)
+        cmd.callback = (stack, seq) => {
+            stack.push(seq.str)
         }
         
         cmd.$end = (seq) => {
-            cmd.stack.confirm()
+            stack.confirm()
         }
     }
 }

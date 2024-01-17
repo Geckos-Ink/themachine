@@ -174,10 +174,15 @@ export class UniSynth {
 
     reset(){
         this.stack = new Stack(this, null)
+        this.patterns.reset()
     }
 
     readRes(res){
+        let seqs = res.oldSeqs
 
+        for(let seq of seqs){
+
+        }
     }
 
     /// Stacks
@@ -191,13 +196,6 @@ export class UniSynth {
     }
 }
 
-class SythValue {
-    constructor(value, type=null){
-        this.value = value 
-        this.type = type
-    }
-}
-
 class Pattern {
     constructor(synth){
         this.synth = synth
@@ -205,7 +203,9 @@ class Pattern {
 
         /// Patterns callback
         this.callback = null
-        this.callbacks = {}        
+        this.callbacks = {}   
+        
+        this.stacks = []
     }
 
     addSeries(){
@@ -231,10 +231,80 @@ class Pattern {
         return pattern
     }
 
-    begin(){
-        this.stack = this.enter()
+    begin(seq){
+        let stack = this.enter()
+        this.stacks.push(stack)
+
         if(this.$begin)
-            this.$begin()
+            this.$begin(stack, seq)
+
+        return stack
+    }
+
+    check(seq){
+
+        const seqSeriesCmp = (seq, series)=>{
+            const typeOfSeries = typeof series
+            if(typeOfSeries == 'string'){
+                return seq.str == this.start ? 2 : 0
+            }
+            else if(typeOfSeries == 'object'){
+                if(series instanceof SequenceType){
+                    return seq.type == series ? 1 : 0
+                }
+            }
+
+            return false
+        }
+
+        const addTokens = (stack, series) =>{
+            const typeOfSeries = typeof series
+            if(typeOfSeries == 'string'){
+                stack.tokens += 2
+            }
+            else if(typeOfSeries == 'object'){
+                if(series instanceof SequenceType){
+                    stack.tokens += 1
+                }
+            }
+        }
+
+        let cmp = 0
+        if(cmp = seqSeriesCmp(seq, this.start)){
+            let stack = this.begin(seq)
+            stack.tokens += cmp
+        }        
+
+        for(let stack of this.stacks){
+            if(this.callbacks[seq.type.name]){
+                let cbkRes = this.callbacks[seq.type.name](stack, seq)
+                if(cbkRes === false)
+                    continue;
+
+                if(cbkRes){
+                    stack.tokens += cbkRes
+                    return true
+                }
+            }
+
+            if(this.callback){
+                let cbkRes = this.callback(stack, seq)
+                if(cbkRes === false)
+                    continue;
+
+                if(cbkRes){
+                    stack.tokens += cbkRes
+                    return true
+                }
+            }
+
+            //todo: check series pos
+        }
+    }
+
+    reset(){
+        this.start = this.series[0]
+        this.end = this.series.length > 0 ? this.series[this.series.length == 0] : null
     }
 }
 
@@ -243,6 +313,8 @@ class Stack {
         this.synth = synth
         this.parent = synth.stack         
         this.children = []
+
+        this.tokens = 0
     }
 
     push(child){
