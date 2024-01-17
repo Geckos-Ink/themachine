@@ -29,8 +29,8 @@ class MachineSynth extends UniSynth {
         /*let spaces = patterns.pattern('space', true)        
         spaces.addSeries(this.lang.sequenceType('space'))   
         
-        instruction.callbacks['space'] = ()=>{
-            return // ignore spaces
+        instruction.callbacks['space'] = (stack, seq)=>{
+            return false// ignore spaces
         }*/
         
         let instructionStart = instruction.pattern('start')
@@ -45,14 +45,18 @@ class MachineSynth extends UniSynth {
             stack.arg = ''
 
             stack.flushArg = ()=>{
-                stack.push(stack.arg)
-                stack.arg = ''
+                if(stack.arg){
+                    stack.push(stack.arg)
+                    stack.arg = ''
+                }
             }
         }
 
         cmd.callback = (stack, seq) => {
-            if(seq.is('word'))
+            if(seq.is('word')){
                 stack.arg += seq.str
+                return true
+            }
         }
 
         cmd.callbacks['space'] = (stack, seq) => {

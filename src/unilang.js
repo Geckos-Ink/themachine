@@ -255,7 +255,7 @@ class Pattern {
 
             const typeOfSeries = typeof series
             if(typeOfSeries == 'string'){
-                return seq.str == this.seriesStart ? 2 : 0
+                return seq.str == series ? 2 : 0
             }
             else if(typeOfSeries == 'object'){
                 if(series instanceof SequenceType){
@@ -264,7 +264,8 @@ class Pattern {
                 else if(series instanceof Pattern){
                     let w = series.check(seq)
                     if(w){
-                        endedStacks.push(w)                        
+                        //endedStacks.push(w)      
+                        return w.tokens                 
                     }
                 }
             }
