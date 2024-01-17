@@ -3,6 +3,8 @@
 import fs from 'fs'
 import {TheMachine} from './index.js'
 
+let machine = new TheMachine()
+
 // Access command-line arguments
 const args = process.argv.slice(2);
 
