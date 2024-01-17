@@ -46,9 +46,5 @@ class MachineSynth extends UniSynth {
         cmd.callback = (stack, seq) => {
             stack.push(seq.str)
         }
-        
-        cmd.$end = (seq) => {
-            stack.confirm()
-        }
     }
 }
