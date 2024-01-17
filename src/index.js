@@ -1,5 +1,5 @@
 import { Bassh } from "bassh";
-import { Unilng } from "./unilang.js"
+import { Unilang } from "./unilang.js"
 
 export class TheMachine {
     

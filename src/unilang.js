@@ -1,6 +1,6 @@
 // Exported from Unilang project
 
-export default class Unilang {
+export class Unilang {
     constructor(name){
         this.name = name
 
