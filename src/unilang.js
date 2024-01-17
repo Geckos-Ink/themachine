@@ -91,6 +91,9 @@ export class Unilang {
         this.session = {
             seqs: {}
         }
+
+        if(this.synth)
+            this.synth.reset()
     }
 }
 
@@ -151,15 +154,6 @@ class SequenceType {
 
         return false
     }
-
-    ///
-    ///
-    ///
-
-    setSynth(synth){
-        this.synth = synth 
-        synth.lang = this
-    }
 }
 
 ///
@@ -167,22 +161,31 @@ class SequenceType {
 ///
 
 export class UniSynth {
-    constructor(){        
+    constructor(lang){        
         this.stack = null
-        this.patterns = new Pattern()
+        this.patterns = new Pattern(this)
+
+        this.lang = lang
+        this.reset()
     }
 
     reset(){
-        this.stack = new Stack(this, null)
+        this.curStack = this.stack = new Stack(this, null)
         this.patterns.reset()
     }
 
     readRes(res){
         let seqs = res.oldSeqs
 
-        for(let seq of seqs){
-
+        let winner = null
+        for(let s in seqs){
+            let w = this.patterns.check(seqs[s])
+            if(w)
+                winner = w
         }
+
+        if(winner)
+            winner.confirm()
     }
 
     /// Stacks
@@ -192,14 +195,15 @@ export class UniSynth {
     }
 
     exit(){
-        this.stack = this.stack.parent
+        this.curStack = this.curStack.parent
     }
 }
 
 class Pattern {
     constructor(synth){
         this.synth = synth
-        this.series = []
+        this.patterns = {}
+        this.series = []        
 
         /// Patterns callback
         this.callback = null
@@ -215,7 +219,7 @@ class Pattern {
 
     pattern(name, addToSeries=false){
         if(!this.patterns[name]){
-            let pat = new Pattern(this)
+            let pat = new Pattern(this.synth)
             pat.name = name 
 
             this.patterns[name] = pat
@@ -230,7 +234,7 @@ class Pattern {
     }
 
     begin(seq){
-        let stack = this.enter()
+        let stack = this.synth.enter()
         this.stacks.push(stack)
 
         if(this.$begin)
@@ -264,10 +268,10 @@ class Pattern {
             }
 
             return false
-        }
+        }        
 
         let cmp = 0
-        if(cmp = seqSeriesCmp(seq, this.start)){
+        if((cmp = seqSeriesCmp(seq, this.start)) > 0){
             let stack = this.begin(seq)
             stack.tokens += cmp
             stack.seriesPos++
@@ -287,7 +291,26 @@ class Pattern {
             stacksToRemove = []
         }
         
-        const checkStack = (stack) =>{            
+        const checkStack = (stack) =>{  
+            
+            /// Check series pos
+            let series = this.series[stack.seriesPos]
+            if(series){
+                if((cmp = seqSeriesCmp(seq, series))>0){
+                    stack.tokens += cmp
+                    stack.seriesPos++
+
+                    if(stack.seriesPos == this.series.length){                        
+                        stack.ended = true
+                    }
+
+                    return true
+                }
+                else if(cmp == -1)
+                    return remove(stack)
+            }
+            
+            /// Check callbacks
             if(this.callbacks[seq.type.name]){
                 let cbkRes = this.callbacks[seq.type.name](stack, seq)
                 if(cbkRes === false){
@@ -310,36 +333,18 @@ class Pattern {
                     stack.tokens += cbkRes
                     return true
                 }
-            }
-
-            // check series pos
-            let series = this.series[stack.seriesPos]
-            if(series){
-                if(cmp = seqSeriesCmp(seq, series)){
-                    stack.tokens += cmp
-                    stack.seriesPos++
-
-                    if(stack.seriesPos == this.series.length){                        
-                        stack.ended = true
-                    }
-
-                    return true
-                }
-                else 
-                    return remove(stack)
-            }
+            }            
         }
         
         /// Cycle
 
-        for(let stack of this.stacks){
-            checkStack(stack)
+        for(let s in this.stacks){
+            checkStack(this.stacks[s])
         }
 
         if(this.stacks.length == 0){
             let stack = this.begin(seq)
-            if(!checkStack(stack))
-                remove(stack)
+            checkStack(stack)
         }
 
 
@@ -365,11 +370,7 @@ class Pattern {
             return 0
         });
 
-        let winner = endedStacks[0]
-        if(winner)
-            winner.confirm()
-
-        return winner
+        return endedStacks[0]
     }
 
     reset(){
@@ -383,7 +384,7 @@ class Pattern {
 class Stack {
     constructor(synth){
         this.synth = synth
-        this.parent = synth.stack         
+        this.parent = synth.curStack         
         this.children = []
 
         this.tokens = 0

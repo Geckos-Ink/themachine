@@ -4,7 +4,7 @@ import { Unilang, UniSynth } from "./unilang.js"
 export class TheMachine {
     constructor(){
         this.unilang = new Unilang('themachine')
-        this.unilang.setSynth(new MachineSynth())
+        this.unilang.synth = new MachineSynth(this.unilang)
     }
 
     read(script){
@@ -12,14 +12,15 @@ export class TheMachine {
         for(let c=0; c<script.length; c++){
             this.unilang.read(script[c])
         }
-        let end = this.unilang.read('\0')
-        console.log(end)
+        this.unilang.read('\0')
+        console.log(this.unilang.synth.patterns.stacks)
+        return
     }
 }
 
 class MachineSynth extends UniSynth {
-    constructor(){
-        super()        
+    constructor(lang){
+        super(lang)        
 
         let patterns = this.patterns
 
@@ -29,7 +30,7 @@ class MachineSynth extends UniSynth {
         spaces.addSeries(this.lang.sequenceType('space'))   
         
         instruction.callbacks['space'] = ()=>{
-            return false // ignore spaces
+            return // ignore spaces
         }
         
         let instructionStart = instruction.pattern('start', true)
@@ -45,6 +46,11 @@ class MachineSynth extends UniSynth {
 
         cmd.callback = (stack, seq) => {
             stack.push(seq.str)
+        }
+
+        cmd.$end = (stack, seq) => {
+            stack.confirm()
+            this.exit()
         }
     }
 }
