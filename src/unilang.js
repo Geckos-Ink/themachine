@@ -21,7 +21,7 @@ export class Unilang {
         this.sequenceType('spaces').setSeries(space, tab)   
         
         const newLine = this.sequenceType('newLine').setSeries('\n')
-        //const newLineR = this.sequenceType('newLineR').setSeries('\r')
+        const newLineR = this.sequenceType('newLineR').setSeries('\r')
     }
 
     sequenceType(type){
@@ -44,7 +44,7 @@ export class Unilang {
         res.seqs = {}
         res.newSeqs = {}
 
-        function addSeq(seq){
+        const addSeq = (seq)=>{
             let name = seq.name 
 
             if(!this.session.seqs[name]){
@@ -80,6 +80,9 @@ export class Unilang {
                 delete this.session.seqs[s]
             }
         }
+
+        if(this.synth)
+            this.synth.readRes(res)
 
         return res
     }
@@ -148,6 +151,15 @@ class SequenceType {
 
         return false
     }
+
+    ///
+    ///
+    ///
+
+    setSynth(synth){
+        this.synth = synth 
+        synth.lang = this
+    }
 }
 
 ///
@@ -155,9 +167,9 @@ class SequenceType {
 ///
 
 export class UniSynth {
-    constructor(){
-        this.patterns = {}
+    constructor(){        
         this.stack = null
+        this.patterns = new Pattern()
     }
 
     reset(){
@@ -168,19 +180,10 @@ export class UniSynth {
 
     }
 
-    getPattern(name){
-        if(!this.patterns[name]){
-            let pat = new Pattern(this)
-            pat.name = name 
-
-            this.patterns[name] = pat
-        }
-
-        return this.patterns[name]
-    }
+    /// Stacks
 
     enter(){
-        this.stack = new Stack(this)
+        return new Stack(this)
     }
 
     exit(){
@@ -198,17 +201,56 @@ class SythValue {
 class Pattern {
     constructor(synth){
         this.synth = synth
+        this.series = []
+
+        /// Patterns callback
+        this.callback = null
+        this.callbacks = {}        
+    }
+
+    addSeries(){
+        for(let a in arguments)
+            this.series.push(arguments[a])
+
+        return this
+    }
+
+    pattern(name, addToSeries=false){
+        if(!this.patterns[name]){
+            let pat = new Pattern(this)
+            pat.name = name 
+
+            this.patterns[name] = pat
+        }
+
+        let pattern = this.patterns[name]
+
+        if(addToSeries)
+            this.addSeries(pattern)
+
+        return pattern
+    }
+
+    begin(){
+        this.stack = this.enter()
+        if(this.$begin)
+            this.$begin()
     }
 }
 
 class Stack {
     constructor(synth){
         this.synth = synth
-        let parent = this.parent = synth.stack 
-
-        if(parent)
-            parent.children.push(parent)
-
+        this.parent = synth.stack         
         this.children = []
+    }
+
+    push(child){
+        this.children.push(child)
+    }
+
+    confirm(){
+        if(this.parent) 
+            this.parent.children.push(this.parent)
     }
 }
