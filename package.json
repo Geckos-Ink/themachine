@@ -26,5 +26,9 @@
   },
   "homepage": "https://github.com/Geckos-Ink/themachine#readme",
   "dependencies": {
+    "bassh": "^0.0.4"
+  },
+  "bin": {
+    "themachine": "./src/cl.js"
   }
 }
