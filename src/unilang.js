@@ -3,8 +3,10 @@
 export class Unilang {
     constructor(name){
         this.name = name
-
+        
         this.sequenceTypes = {}
+
+        this.defaultSequenceType = new SequenceType("default")
 
         const letterLower = this.sequenceType('letterLower').setRange('a', 'z')
         const letterUpper = this.sequenceType('letterUpper').setRange('A', 'Z')
@@ -42,22 +44,32 @@ export class Unilang {
         res.seqs = {}
         res.newSeqs = {}
 
+        function addSeq(seq){
+            let name = seq.name 
+
+            if(!this.session.seqs[name]){
+                let sseq = new Sequence(seq)
+                this.session.seqs[name] = sseq
+                res.newSeqs[name] = sseq
+            }
+
+            let sseq = this.session.seqs[name]
+            sseq.str += ch
+
+            res.seqs[seq.name] = sseq
+        }
+
+        let seqFound = false
         for(let s in this.sequenceTypes){
             let seq = this.sequenceTypes[s]
             if(seq.check(ch)){
-                let name = seq.name 
-
-                if(!this.session.seqs[name]){
-                    let sseq = new Sequence(seq)
-                    this.session.seqs[name] = sseq
-                    res.newSeqs[name] = sseq
-                }
-
-                let sseq = this.session.seqs[name]
-                sseq.str += ch
-
-                res.seqs[seq.name] = sseq
+                seqFound = true
+                addSeq(seq)
             }
+        }
+
+        if(!seqFound){
+            addSeq(this.defaultSequenceType)
         }
 
         res.oldSeqs = {}
@@ -138,7 +150,65 @@ class SequenceType {
     }
 }
 
+///
+/// Synthetizer
+///
 
 export class UniSynth {
-    
+    constructor(){
+        this.patterns = {}
+        this.stack = null
+    }
+
+    reset(){
+        this.stack = new Stack(this, null)
+    }
+
+    readRes(res){
+
+    }
+
+    getPattern(name){
+        if(!this.patterns[name]){
+            let pat = new Pattern(this)
+            pat.name = name 
+
+            this.patterns[name] = pat
+        }
+
+        return this.patterns[name]
+    }
+
+    enter(){
+        this.stack = new Stack(this)
+    }
+
+    exit(){
+        this.stack = this.stack.parent
+    }
+}
+
+class SythValue {
+    constructor(value, type=null){
+        this.value = value 
+        this.type = type
+    }
+}
+
+class Pattern {
+    constructor(synth){
+        this.synth = synth
+    }
+}
+
+class Stack {
+    constructor(synth){
+        this.synth = synth
+        let parent = this.parent = synth.stack 
+
+        if(parent)
+            parent.children.push(parent)
+
+        this.children = []
+    }
 }

@@ -10,5 +10,5 @@ const args = process.argv.slice(2);
 
 if(args.length == 1){
     let read = fs.readFileSync(args[0]).toString()
-    console.log("to read: ", read)
+    machine.read(read)
 }
