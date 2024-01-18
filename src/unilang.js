@@ -239,14 +239,15 @@ class Pattern {
     }
 
     end(stack, seq){
-        if(stack.$end)
-            stack.$end(stack, seq)        
+        if(stack.pattern.$end)
+            stack.pattern.$end(stack, seq)        
 
         // it's possible to set false checking the result of this.$end
         return true 
     }
 
-    check(seq){        
+    check(seq, stack=null){        
+        let curStack = stack || this.stack
         let endedStacks = []
 
         const seqSeriesCmp = (seq, series, stack)=>{
@@ -262,9 +263,11 @@ class Pattern {
                     return seq.type == series ? 1 : 0
                 }
                 else if(series instanceof Pattern){
-                    let w = series.check(seq)
+                    let w = series.check(seq, stack)
                     if(w){
-                        //endedStacks.push(w)      
+                        if(w.children.length > 0)
+                            endedStacks.push(w)      
+
                         return w.tokens                 
                     }
                 }
@@ -273,12 +276,13 @@ class Pattern {
             return -1
         }        
 
+        // Check begin
         let cmp = 0
-        if((cmp = seqSeriesCmp(seq, this.seriesStart, this.stack)) > 0){
-            let stack = this.begin(seq)
-            stack.push(seq)
-            stack.tokens += cmp
-            stack.seriesPos++
+        if((cmp = seqSeriesCmp(seq, this.seriesStart, curStack)) > 0){
+            let newStack = this.begin(seq)
+            //stack.push(seq)
+            newStack.tokens += cmp
+            newStack.seriesPos++
         }            
 
         let stacksToRemove = []
@@ -295,63 +299,57 @@ class Pattern {
             stacksToRemove = []
         }
         
-        const checkStack = (stack) =>{          
+        const checkStack = (stack) =>{                      
+            /// Check callbacks
+            if(this.callbacks[seq.type.name]){
+                let cbkRes = this.callbacks[seq.type.name](stack, seq)
+                if(cbkRes !== undefined)
+                    return cbkRes
+            }
+
+            if(this.callback){
+                let cbkRes = this.callback(stack, seq)
+                if(cbkRes !== undefined)
+                    return cbkRes
+            }   
+            
             /// Check series pos
             let series = this.series[stack.seriesPos]
             if(series){
-                if((cmp = seqSeriesCmp(seq, series, stack))>0){
-                    stack.push(seq)
-                    stack.tokens += cmp
+                cmp = seqSeriesCmp(seq, series, stack)
+                if(cmp > 0){
                     stack.seriesPos++
 
                     if(stack.seriesPos == this.series.length){                        
                         stack.ended = true
                     }
-
-                    return true
                 }
-                else if(cmp == -1)
-                    return remove(stack)
+                
+                return cmp
             }
-            
-            /// Check callbacks
-            if(this.callbacks[seq.type.name]){
-                let cbkRes = this.callbacks[seq.type.name](stack, seq)
-                if(cbkRes === false){
-                    return remove(stack)
-                }
+        }
 
-                if(cbkRes){
-                    stack.push(seq)
-                    stack.tokens += cbkRes
-                    return true
-                }
+        const checkStatResElaborate = (res, stack)=>{
+            if(res == -1 || res === false){
+                remove(stack)
             }
-
-            if(this.callback){
-                let cbkRes = this.callback(stack, seq)
-                if(cbkRes === false){
-                    return remove(stack)
-                }
-
-                if(cbkRes){
-                    stack.push(seq)
-                    stack.tokens += cbkRes
-                    return true
-                }
-            }            
+            else {
+                stack.tokens += res
+            }
         }
         
         /// Cycle
         for(let s in this.stacks){
-            checkStack(this.stacks[s])
+            let thisStack = this.stacks[s]
+            let res = checkStack(thisStack)
+            checkStatResElaborate(res, thisStack)
         }
 
         if(this.stacks.length == 0){
-            let stack = this.begin(seq)
-            checkStack(stack)
+            let newStack = this.begin(seq)
+            let res = checkStack(newStack)
+            checkStatResElaborate(res, newStack)
         }
-
 
         /// Remove
         confirmRemove()
@@ -382,12 +380,14 @@ class Pattern {
             return 0
         });        
 
-        let stack = endedStacks[0]
+        let resStack = endedStacks[0]
 
-        if(stack)
-            this.stack.push(stack)
+        if(resStack){
+            this.end(resStack, seq)
+            curStack.push(resStack)
+        }
 
-        return stack
+        return resStack
     }
 
     reset(){

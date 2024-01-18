@@ -36,7 +36,8 @@ class MachineSynth extends UniSynth {
         let instructionStart = instruction.pattern('start')
 
         let cmd = instructionStart.pattern('cmd')
-        let cmdStart = cmd.pattern('cmdStart').addSeries('$',' ')
+
+        let cmdStart = cmd.pattern('cmdStart').addSeries('$',' ')        
 
         cmd.addSeries(cmdStart, '\n')
 
