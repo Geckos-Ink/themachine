@@ -20,7 +20,12 @@ export class TheMachine {
 
 class MachineSynth extends UniSynth {
     constructor(lang){
-        super(lang)        
+        super(lang)      
+        
+        const doubleQuote = lang.sequenceType('doubleQuote').setSeries('"')
+        //todo: handle strings
+
+        ///
 
         let patterns = this.patterns
 
