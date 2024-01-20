@@ -195,8 +195,10 @@ class Pattern {
     constructor(synth){
         this.synth = synth
         this.patterns = {}        
-        this.patternsToIterate = []      
+        this.patternsIterate = []      
         this.series = []  
+
+        this.condition = {} // reflect about this
 
         /// Patterns callback
         this.callback = null
@@ -210,7 +212,7 @@ class Pattern {
         return this
     }
 
-    pattern(name, generic=false){
+    pattern(name/*, generic=false*/){
         if(!this.patterns[name]){
             let pat = new Pattern(this.synth)
             pat.name = name 
@@ -220,15 +222,14 @@ class Pattern {
 
         let pattern = this.patterns[name]
 
-        if(!generic){
-            this.patternsToIterate.push(pattern)
-        }
+        this.patternsIterate.push(pattern)
+        //if(!generic) this.patternsIterate.push(pattern) 
 
         return pattern
     }
 
     begin(seq){
-        let stack = new Stack(this.stack)
+        let stack = new Stack(this, this.stack)
         stack.pattern = this
         this.stacks.push(stack)
 
@@ -333,7 +334,7 @@ class Pattern {
             if(res == -1 || res === false){
                 remove(stack)
             }
-            else {
+            else if(res) {
                 stack.tokens += res
             }
         }
@@ -367,7 +368,7 @@ class Pattern {
         confirmRemove()
 
         /// Check generic patterns
-        for(let pat of this.patternsToIterate){
+        for(let pat of this.patternsIterate){
             let w = pat.check(seq)
             if(w){
                 endedStacks.push(w)
@@ -385,6 +386,7 @@ class Pattern {
         if(resStack){
             this.end(resStack, seq)
             curStack.push(resStack)
+            //this.reset()
         }
 
         return resStack
@@ -395,7 +397,7 @@ class Pattern {
 
         this.stacksRes = []
         this.stacks = []
-        this.stack = new Stack()
+        this.stack = new Stack(this)
         
         for(let p in this.patterns)
             this.patterns[p].reset()
@@ -403,7 +405,8 @@ class Pattern {
 }
 
 class Stack {
-    constructor(parent){
+    constructor(pattern, parent){
+        this.pattern = pattern
         this.parent = parent     
         this.children = []
 
@@ -416,7 +419,13 @@ class Stack {
     }
 
     confirm(){
-        if(this.parent) 
-            this.parent.children.push(this.parent)
+        if(this.parent)
+            this.parent.confirmChild(this) 
+
+        this.pattern.stack = this
+    }
+
+    confirmChild(child){
+        this.children.push(child)        
     }
 }

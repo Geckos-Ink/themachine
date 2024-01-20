@@ -40,9 +40,16 @@ class MachineSynth extends UniSynth {
         
         let instructionStart = instruction.pattern('start')
 
+        ///
+        /// CMD
+        ///
         let cmd = instructionStart.pattern('cmd')
 
         let cmdStart = cmd.pattern('cmdStart').addSeries('$',' ')        
+        cmdStart.$end = (stack, seq) => {
+            // Confirm CMD after immediately after is start pattern
+            stack.parent.confirm()
+        }
 
         cmd.addSeries(cmdStart, '\n')
 
@@ -71,7 +78,17 @@ class MachineSynth extends UniSynth {
 
         cmd.$end = (stack, seq) => {
             stack.flushArg()
-            stack.confirm()
+        }
+
+        ///
+        /// EXPRESSION
+        ///
+        let expression = instruction.pattern('expression')
+        expression.condition = {not: instructionStart}
+
+        expression.callback = (stack, seq)=>{
+            //console.log(stack)
+            console.log("expression check")
         }
     }
 }
